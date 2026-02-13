@@ -1,46 +1,26 @@
 # Linux-DRM-Explorer
 
-A repository dedicated to exploring and mastering the Linux **DRM/KMS (Direct Rendering Manager / Kernel Mode Setting)** subsystem. This project documents technical insights, debugging methodologies, and hardware bring-up experiences on ARM-based embedded platforms.
+A systematic exploration of the **Linux DRM/KMS subsystem** on the **Rockchip RK3588 (VOP2)** platform. This project documents the complete display bring-up process, from low-level register verification to high-level atomic synchronization.
+
+## Key Project Highlights
+* **Cross-Subsystem Mental Model**: Leveraging experience from **Linux ASoC** to master the DRM pipeline (Mapping DMA/Mixers to CRTC/Planes).
+* **Hardware-Level Debugging**: Direct verification of Video Timing and Pixel Clocks via `debugfs` and hardware registers.
+* **Sync & Performance**: Deep dive into `dma-fence` mechanisms and **VBlank IRQ** monitoring for smooth page-flipping.
+
+## Technical Experiments (Step-by-Step)
+I have documented the bring-up process in 6 structured experiments:
+
+1. [**KMS Pipeline Mapping**](./docs/01_Hardware_Inventory.md): Analyzing internal resources (VP0-VP3) and Plane constraints.
+2. [**Modetest mastery**](./docs/02_Modetest_Mastery.md): Hands-on with atomic modesetting and troubleshooting object IDs.
+3. [**DSI Panel Bring-up**](./docs/03_DSI_Panel_Bringup.md): Calculating Video Timings and verifying PCLK registers.
+4. [**DRM Master Concepts**](./docs/04_DRM_Master_and_Race_Condition.md): Understanding ownership conflicts between `fbcon` and userspace clients.
+5. [**Composition & Sync**](./docs/05_Composition_and_Sync.md): Hardware layering (Z-order) and the role of GEM/Fence.
+6. [**VBlank & Page Flip**](./docs/06_VBlank_and_PageFlip.md): Real-time monitoring of VOP interrupts to verify display "heartbeat."
+
+## Tools & Environment
+* **Hardware**: LubanCat 5 (Rockchip RK3588)
+* **OS**: Ubuntu Lite (Minimal environment for cleaner DRM debugging)
+* **Kernel Tools**: `modetest`, `debugfs`, `procfs`, `GICv3` interrupt controller analysis.
 
 ---
-
-## Technical Objectives
-* **Deep Dive into KMS Pipeline**: Understanding the abstraction of Planes, CRTCs, Encoders, and Connectors.
-* **Hardware Bring-up Methodology**: Documenting the process of driving display panels from low-level kernel configurations (DTS, Clocks, Timings).
-* **Advanced Diagnostics**: Mastering system-level debugging using tools like `modetest`, `drm_info`, and `debugfs`.
-* **Subsystem Comparison**: Leveraging experience from the Linux **ASoC** (ALSA SoC) subsystem to build a comparative mental model for multimedia drivers.
-
----
-
-## Cross-Subsystem Mapping: ASoC vs. DRM
-To accelerate the learning curve, I utilize a comparative approach by mapping display logic to audio logic:
-
-| Dimension | ASoC (Audio) | DRM (Display) |
-| :--- | :--- | :--- |
-| **Hardware Enumeration** | `cat /proc/asound/cards` | `ls -l /dev/dri/` |
-| **Path/Routing** | DAPM Widgets / Routes | KMS Pipeline (Plane -> CRTC -> Connector) |
-| **Control & Testing** | `tinymix` / `speaker-test` | `modetest` / `kmscube` |
-| **Low-level Snapshots** | `/sys/kernel/debug/asoc/` | `/sys/kernel/debug/dri/` |
-
----
-
-## Initial Analysis: Rockchip VOP (RK3588)
-My first experiment involves analyzing an active display pipeline on a **LubanCat 5 (RK3588)** platform.
-
-### Snapshot Highlights (`modetest -p` Analysis)
-* **Platform**: Rockchip VOP2 (Video Output Processor)
-* **Active Mode**: 1024x600 @ 60.00 Hz
-* **Pipeline Status**: 
-    * **CRTC ID 208** is currently active and bound to **Framebuffer 262**.
-    * **Primary Plane (ID 176)** is feeding the CRTC.
-* **Key Observations**:
-    * The hardware exhibits a multi-window architecture with support for `Cluster`, `Esmart`, and `Smart` planes.
-    * Support for **AFBC** (Arm Frame Buffer Compression) is detected on specific planes (e.g., Plane 81), which is critical for bandwidth optimization in high-resolution scenarios.
-
----
-
-## Learning Roadmap
-- [x] Master `modetest` for resource enumeration and basic modesetting.
-- [ ] Analyze Atomic State snapshots in `/sys/kernel/debug/dri/0/state`.
-- [ ] Explore DSI/HDMI bridge driver initialization and DTS bindings.
-- [ ] Implement automated health-check scripts for display pipelines.
+*Signed-off-by: TomHsieh300 <your-email@example.com>*
