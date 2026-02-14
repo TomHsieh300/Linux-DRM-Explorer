@@ -16,6 +16,7 @@ I have documented the bring-up process in 6 structured experiments:
 4. [**DRM Master Concepts**](./docs/04_DRM_Master_and_Race_Condition.md): Understanding ownership conflicts between `fbcon` and userspace clients.
 5. [**Composition & Sync**](./docs/05_Composition_and_Sync.md): Hardware layering (Z-order) and the role of GEM/Fence.
 6. [**VBlank & Page Flip**](./docs/06_VBlank_and_PageFlip.md): Real-time monitoring of VOP interrupts to verify display "heartbeat."
+7. [**User Space Example**](./docs/07_Userspace_KMS_Implementation.md): Implementing Userspace KMS using C and libdrm
 
 ## Tools & Environment
 * **Hardware**: LubanCat 5 (Rockchip RK3588)
@@ -23,4 +24,4 @@ I have documented the bring-up process in 6 structured experiments:
 * **Kernel Tools**: `modetest`, `debugfs`, `procfs`, `GICv3` interrupt controller analysis.
 
 ---
-*Signed-off-by: TomHsieh300 <your-email@example.com>*
+*Signed-off-by: TomHsieh300 <hungen3108@gmail.com>*
