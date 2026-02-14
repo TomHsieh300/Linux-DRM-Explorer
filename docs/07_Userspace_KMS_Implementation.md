@@ -13,6 +13,7 @@ Transition from command-line tools to custom C code to gain full control over th
 To compile this program on the LubanCat 5, ensure `libdrm-dev` is installed and use `pkg-config` to handle header paths:
 ```bash
 gcc -o src/modeset-single-buffer src/modeset-single-buffer.c $(pkg-config --cflags --libs libdrm)
+```
 
 ## 4. High-Level Logic Flow (C-Style Pseudocode)
 
