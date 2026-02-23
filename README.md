@@ -2,13 +2,13 @@
 
 A systematic and deep-dive exploration of the **Linux DRM/KMS subsystem** on the **Rockchip RK3588 (VOP2)** platform. This project documents a professional display bring-up journey, transitioning from low-level register verification to modern, high-performance atomic synchronization.
 
-## ?? Project Highlights
+## Project Highlights
 * **Architectural Mastery**: Bridging the mental model between **Linux ASoC** (Audio) and **DRM** (Display), treating pixels as a specialized DMA stream.
 * **Modern API Transition**: Complete migration from **Legacy KMS** (SetCrtc) to **Atomic KMS** (Property-based commits).
 * **Zero-Copy Pipelines**: Implementation of **DMA-BUF (PRIME)** for efficient cross-device memory sharing without CPU intervention.
 * **Performance Optimization**: Inner-loop **branchless rendering** and **Fence-based hardware synchronization** to eliminate UI jitter and tearing.
 
-## ?? The 11-Stage Learning Roadmap
+## The 11-Stage Learning Roadmap
 
 I have structured the bring-up process into 11 progressive experiments:
 
@@ -29,14 +29,14 @@ I have structured the bring-up process into 11 progressive experiments:
 10. [**Atomic KMS Mastery**](./docs/10_Atomic_KMS_Implementation.md): Fully migrating to the **Atomic property model** and `TEST_ONLY` validation.
 11. [**DMA-BUF & Fence Sync**](./docs/11_DMA_BUF_and_Fence_Sync.md): Simulating cross-device pipelines with **PRIME** and explicit fences (`IN_FENCE_FD`).
 
-## ?? Tools & Environment
+## Tools & Environment
 * **Target Hardware**: LubanCat 5 (Rockchip RK3588, VOP2)
 * **Software Stack**: Ubuntu Lite (Minimal CLI), `libdrm`, `linux-libc-dev`.
 * **Analysis Tools**: `modetest`, `debugfs` (KMS status), `GICv3` interrupt analysis.
 
 ---
 
-## ?? Technical Insights for IC Design & BSP Teams
+## Technical Insights for IC Design & BSP Teams
 * **Unified Memory Coherency**: Deep understanding of `DMA_BUF_IOCTL_SYNC` for cache maintenance on ARM SoCs.
 * **Proprietary Driver Strategies**: Successfully simulated cross-namespace GEM sharing on platforms with proprietary Mali stacks.
 * **Fixed-Point Precision**: Handling 16.16 fixed-point source coordinates required by modern display hardware.
