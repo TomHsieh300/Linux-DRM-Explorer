@@ -3,13 +3,18 @@
 ## 1. Objective
 Advance the display pipeline by implementing **Double Buffering**. This experiment manages two independent framebuffers to prepare for flicker-free animations and introduces software-level optimizations for high-performance pixel rendering.
 
-## 2. Key Implementation Details
+## 2. Environment
+See the [Test Environment](../README.md#test-environment) section.
+
+---
+
+## 3. Key Implementation Details
 * **Buffer Management (Array-based)**: Managed multiple `buffer_object` structures within an array. This provides a scalable architecture for Double or even Triple Buffering.
 * **Branchless Pattern Generation**: Optimized the `draw_test_pattern` function by replacing nested `if/else` conditionals with a pre-defined color array and indexed lookup.
     * *Why?*: Modern CPU pipelines suffer from "branch misprediction" penalties. By removing branches from the inner loop (which runs once per pixel), we significantly improve rendering throughput for high-resolution displays.
 * **Main Loop Refactoring**: Replaced redundant setup code with indexed loops, adhering to the DRY (Don't Repeat Yourself) principle and improving code maintainability.
 
-## 3. Compilation
+## 4. Compilation
 This project now utilizes a universal **Makefile** that automatically detects all source files in the `src/` directory.
 ```bash
 # Build all experiments including double-buffer
@@ -19,7 +24,7 @@ make
 sudo ./src/modeset-double-buffer
 ```
 
-## 4. High-Level Logic Flow (C-Style Pseudocode)
+## 5. High-Level Logic Flow (C-Style Pseudocode)
 
 The logic of `src/modeset-double-buffer.c` focuses on initializing multiple buffers and demonstrating the manual switching between them.
 
@@ -61,3 +66,11 @@ for (int i = 0; i < MAX_BUFFERS; i++) {
 // 5. Cleanup
 // Destroy each FB and close file descriptor.
 ```
+
+## 6. Results
+> `TODO(on-hardware)`: record the exact command lines, program output and observations from the LubanCat 5 for this experiment (kernel version as listed in the README's Test Environment).
+
+## 7. References
+* libdrm 2.4.125 `xf86drmMode.c`: `drmModeAddFB`, `drmModeSetCrtc`
+* Kernel source: `drivers/gpu/drm/drm_dumb_buffers.c`
+* [Experiment 09](./09_VBlank_and_Tearing_Analysis.md) explains why swapping with `drmModeSetCrtc` alone is not tear-free

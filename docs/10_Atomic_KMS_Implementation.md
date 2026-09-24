@@ -5,7 +5,12 @@ Migrate the entire display pipeline from Legacy APIs (`SetCrtc`, `PageFlip`) to 
 
 ---
 
-## 2. Key Implementation Details
+## 2. Environment
+See the [Test Environment](../README.md#test-environment) section.
+
+---
+
+## 3. Key Implementation Details
 * **The Atomic Property Model**: Unlike legacy APIs with fixed arguments, Atomic KMS treats everything (FB_ID, CRTC_ID, coordinates) as **Properties**. This implementation uses a caching mechanism to store Property IDs at startup, avoiding expensive string lookups during the animation loop.
 * **Blob Management**: Display modes (`drmModeModeInfo`) are no longer passed as structures but as **Blobs**. The kernel manages these memory blobs, and we reference them via a `MODE_ID` property.
 * **16.16 Fixed-Point Math**: Atomic KMS requires source coordinates (`SRC_X`, `SRC_W`, etc.) in **16.16 fixed-point format**. This allows for sub-pixel precision during hardware scaling—a detail crucial for high-end SoCs like the RK3588.
@@ -13,7 +18,7 @@ Migrate the entire display pipeline from Legacy APIs (`SetCrtc`, `PageFlip`) to 
 
 ---
 
-## 3. Compilation
+## 4. Compilation
 This project utilizes the universal Makefile. Ensure `libdrm-dev` is installed on your LubanCat 5.
 
 ```bash
@@ -27,7 +32,7 @@ sudo ./src/drm-atomic-demo
 sudo ./src/drm-atomic-demo --atomic
 ```
 
-## 4. High-Level Logic Flow (C-Style Pseudocode)
+## 5. High-Level Logic Flow (C-Style Pseudocode)
 The atomic workflow is fundamentally different: you build a request, test it, and then commit it.
 
 ``` c
@@ -60,7 +65,7 @@ if (ret == 0) {
 drmModeAtomicFree(req);
 ```
 
-## 5. Legacy vs. Atomic: Why the change?
+## 6. Legacy vs. Atomic: Why the change?
 The transition from Legacy to Atomic KMS represents a shift from "command-based" display updates to "state-based" transactions. In legacy KMS, changing multiple properties (like moving a plane and switching a framebuffer) required multiple IOCTLs, which often resulted in visible glitches because the hardware might catch a frame "in-between" those commands.
 
 Atomic KMS solves this by bundling all desired changes into a single "request" that the kernel applies in one hardware transaction, guaranteed to take effect during the same VBlank interval.
@@ -74,3 +79,11 @@ Atomic KMS solves this by bundling all desired changes into a single "request" t
 | **Flexibility** | Fixed Arguments | Property-based (Extensible) |
 | **Multi-plane** | Hard to synchronize | Native simultaneous updates |
 | **Hardware State** | Incremental / Fragile | Transactional / Robust |
+
+## 7. Results
+> `TODO(on-hardware)`: record the exact command lines, program output and observations from the LubanCat 5 for this experiment (kernel version as listed in the README's Test Environment).
+
+## 8. References
+* libdrm 2.4.125 `xf86drmMode.c`: `drmModeAtomicAlloc`, `drmModeAtomicAddProperty`, `drmModeAtomicCommit`, `drmModeCreatePropertyBlob`
+* Kernel source: `drivers/gpu/drm/drm_atomic_uapi.c` (property decoding for atomic commits)
+* Kernel documentation: [`Documentation/gpu/drm-kms.rst`](https://github.com/torvalds/linux/blob/master/Documentation/gpu/drm-kms.rst) (Atomic Mode Setting, KMS Properties)

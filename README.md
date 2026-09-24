@@ -8,9 +8,9 @@ A systematic and deep-dive exploration of the **Linux DRM/KMS subsystem** on the
 * **Zero-Copy Pipelines**: Implementation of **DMA-BUF (PRIME)** for efficient cross-device memory sharing without CPU intervention.
 * **Performance Optimization**: Inner-loop **branchless rendering** and **Fence-based hardware synchronization** to eliminate UI jitter and tearing.
 
-## The 11-Stage Learning Roadmap
+## The 17-Stage Learning Roadmap
 
-I have structured the bring-up process into 11 progressive experiments:
+I have structured the bring-up process into 17 progressive experiments:
 
 ### Phase 1: Hardware & Subsystem Basics
 1. [**KMS Pipeline Mapping**](./docs/01_Hardware_Inventory.md): Analyzing internal VOP2 resources (VP0-VP3) and Plane constraints.
@@ -29,10 +29,54 @@ I have structured the bring-up process into 11 progressive experiments:
 10. [**Atomic KMS Mastery**](./docs/10_Atomic_KMS_Implementation.md): Fully migrating to the **Atomic property model** and `TEST_ONLY` validation.
 11. [**DMA-BUF & Fence Sync**](./docs/11_DMA_BUF_and_Fence_Sync.md): Simulating cross-device pipelines with **PRIME** and explicit fences (`IN_FENCE_FD`).
 
+### Phase 4: Composition, Topology & Observability
+> Experiments 12–17 are implemented and compile cleanly, but have **not yet been run on the board**; their Results sections are placeholders.
+
+12. [**Plane Properties & Blending**](./docs/12_Plane_Properties_and_Blending.md): Driving `zpos`, `alpha`, `pixel blend mode`, rotation and scaling through atomic commits.
+13. [**Pixel Formats & Modifiers**](./docs/13_Pixel_Formats_and_Modifiers.md): Decoding the `IN_FORMATS` blob (incl. AFBC) and scanning out an NV12 buffer.
+14. [**Debugging & Tracing**](./docs/14_Debugging_and_Tracing.md): `drm.debug` categories, debugfs, DRM/dma-fence tracepoints and a capture script.
+15. [**Device Tree & Driver Walkthrough**](./docs/15_Device_Tree_and_Driver_Walkthrough.md): Following the DSI panel from the OF graph through the VOP2/DSI driver bind flow.
+16. [**Multi-Display & Hotplug**](./docs/16_Multi_Display_and_Hotplug.md): Routing matrix (`possible_crtcs`), CRTC assignment and netlink hotplug monitoring.
+17. [**Frame Timing Measurement**](./docs/17_Frame_Timing_Measurement.md): Quantifying flip intervals, latency and missed VBlanks.
+
 ## Tools & Environment
 * **Target Hardware**: LubanCat 5 (Rockchip RK3588, VOP2)
 * **Software Stack**: Ubuntu Lite (Minimal CLI), `libdrm`, `linux-libc-dev`.
-* **Analysis Tools**: `modetest`, `debugfs` (KMS status), `GICv3` interrupt analysis.
+* **Analysis Tools**: `modetest`, `debugfs` (KMS status), `GICv3` interrupt analysis, `drm.debug` / ftrace ([Experiment 14](./docs/14_Debugging_and_Tracing.md)).
+
+### Test Environment
+Register addresses, IRQ numbers and object IDs quoted in the experiments depend on the exact kernel and board configuration. Record the versions used so that results can be reproduced:
+
+| Item | Value | How to obtain |
+| :--- | :--- | :--- |
+| Board | LubanCat 5 (RK3588) | — |
+| OS image | `TODO` | `cat /etc/os-release` |
+| Kernel version | `TODO` | `uname -a` |
+| Kernel source (BSP tree / branch / commit) | `TODO` | from the image vendor |
+| DRM driver | `TODO` | `cat /sys/kernel/debug/dri/0/name` |
+| libdrm | `TODO` | `pkg-config --modversion libdrm` |
+| modetest | `TODO` | `dpkg -l libdrm-tests` |
+| Display | 1024x600 MIPI-DSI panel on VP3 | [Experiment 03](./docs/03_DSI_Panel_Bringup.md) |
+
+> Kernel-side explanations in the docs cite upstream `torvalds/linux` source files and tags (mainly `v6.1` and `master`; RK3588 VOP2 support is upstream since `v6.8`). The Rockchip BSP kernel carries vendor patches, so behaviour may differ—each doc says where this matters.
+
+### Building
+```bash
+# Native build on the board
+sudo apt install build-essential pkg-config libdrm-dev
+make
+
+# Cross build on an x86_64 Ubuntu 24.04 host (multiarch)
+sudo dpkg --add-architecture arm64      # arm64 packages come from ports.ubuntu.com
+sudo apt install gcc-aarch64-linux-gnu libdrm-dev:arm64
+make CROSS_COMPILE=aarch64-linux-gnu- PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
+```
+Every `src/*.c` file becomes one binary next to its source. CI ([`.github/workflows/build.yml`](./.github/workflows/build.yml)) builds all experiments natively and for aarch64 with `-Werror`.
+
+### Documentation Conventions
+Each experiment follows the same outline: **Objective → Environment → Background → Steps / Implementation → Results → Analysis → Key Takeaways → References**.
+* Results that have not been captured on the board yet are marked `TODO(on-hardware)`—nothing in the docs is presented as measured unless it was.
+* Kernel and libdrm statements cite the file and function they were checked against.
 
 ---
 

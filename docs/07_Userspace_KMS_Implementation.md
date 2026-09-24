@@ -3,19 +3,24 @@
 ## 1. Objective
 Transition from command-line tools to custom C code to gain full control over the display pipeline. This experiment implements the "Legacy KMS" path to set up a basic framebuffer and scan it out to a DSI panel.
 
-## 2. Key Implementation Details
+## 2. Environment
+See the [Test Environment](../README.md#test-environment) section.
+
+---
+
+## 3. Key Implementation Details
 * **Buffer Management**: Utilized `DRM_IOCTL_MODE_CREATE_DUMB` to allocate raw memory and `drmModeAddFB` to register it as a scanout-capable Framebuffer.
 * **Hardware-Aware CRTC Selection**: Implemented a search algorithm using the `possible_crtcs` bitmask from the encoder.
     * *Lesson Learned*: Hardcoding `res->crtcs[0]` (VP0) fails on RK3588 because the DSI panel is physically wired to VP3 (CRTC 208).
 * **Pointer Arithmetic**: Used the `pitch` (stride) value provided by the kernel instead of `width` to ensure proper memory alignment during pixel writing.
 
-## 3. Compilation
+## 4. Compilation
 To compile this program on the LubanCat 5, ensure `libdrm-dev` is installed and use `pkg-config` to handle header paths:
 ```bash
 gcc -o src/modeset-single-buffer src/modeset-single-buffer.c $(pkg-config --cflags --libs libdrm)
 ```
 
-## 4. High-Level Logic Flow (C-Style Pseudocode)
+## 5. High-Level Logic Flow (C-Style Pseudocode)
 
 The following logic outlines the sequence of operations performed in `src/modeset-single-buffer.c`. This serves as a blueprint for the Legacy KMS display pipeline:
 
@@ -55,3 +60,11 @@ getchar(); // Wait for user
 modeset_destroy_fb(fd, &buf);
 close(fd);
 ```
+
+## 6. Results
+> `TODO(on-hardware)`: record the exact command lines, program output and observations from the LubanCat 5 for this experiment (kernel version as listed in the README's Test Environment).
+
+## 7. References
+* libdrm 2.4.125 `xf86drmMode.c`: `drmModeGetResources`, `drmModeAddFB`, `drmModeSetCrtc`
+* Kernel UAPI: `DRM_IOCTL_MODE_CREATE_DUMB` / `DRM_IOCTL_MODE_MAP_DUMB` (`include/uapi/drm/drm.h`, `include/uapi/drm/drm_mode.h`)
+* Kernel source: `drivers/gpu/drm/drm_dumb_buffers.c` (dumb buffer ioctls and their documentation comment)
