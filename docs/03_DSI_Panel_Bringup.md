@@ -41,7 +41,16 @@ The target DSI panel resolution is 1024x600. The observed timing parameters are:
 * **V-Lines**: 600 (Active), 636 (Total)
 * **Refresh Rate**: 60Hz
 
-> `TODO(on-hardware)`: paste the full mode line from `modetest -c` here so that the individual porch and sync values (`hss`, `hse`, `vss`, `vse`) are recorded as well—only the totals are captured above.
+**Candidate porch values from the vendor device tree.** The LubanCat vendor kernel (`github.com/LubanCat/kernel`, branch `lbc-develop-6.1`) ships the overlay `arch/arm64/boot/dts/rockchip/overlay/rk3588-lubancat-5-dsi1-vp3-1024x600-7inch-ebf410173-overlay.dts`, which routes VP3 to DSI1 with this timing:
+
+| | Active | Front porch | Sync | Back porch | Total |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Horizontal | 1024 | 160 | 10 | 160 | **1354** |
+| Vertical | 600 | 12 | 1 | 23 | **636** |
+
+`clock-frequency = <51668640>` (Hz), i.e. 51668 kHz after truncation to the mode's kHz field. The totals match the measurements above exactly, but it has **not been confirmed that this overlay is the one loaded on the board**; see [Experiment 15](./15_Device_Tree_and_Driver_Walkthrough.md) for how to check.
+
+> `TODO(on-hardware)`: paste the full mode line from `modetest -c` here to confirm the individual porch and sync values (`hss`, `hse`, `vss`, `vse`).
 
 ### 5.2 Pixel Clock Calculation
 The Pixel Clock (PCLK) can be verified using the following formula:
@@ -68,7 +77,16 @@ By reading `debugfs/dri/0/regs`, we located the hardware values in the VP3 secti
 * **fdd90f50**: Found `027c` (636 in Hex, V_total).
 This confirms that the software configuration has been correctly committed to the hardware IP registers.
 
-> `TODO(on-hardware)`: record the register names for `0xfdd90f40` / `0xfdd90f50` from the RK3588 TRM or the BSP driver source, so the mapping to H_total/V_total is documented rather than inferred from the values alone.
+**Register names (from the mainline driver).** In `drivers/gpu/drm/rockchip/rockchip_drm_vop2.h` (master), VP3's register block starts at offset `0x0F00` (`RK3588_VP3_CTRL_BASE`), and the VOP2 register base is `0xfdd90000`:
+
+| Register | Offset in VP block | Address for VP3 | Contents (`vop2_crtc_atomic_enable()`) |
+| :--- | :--- | :--- | :--- |
+| `RK3568_VP_DSP_HTOTAL_HS_END` | `0x48` | `0xfdd90f48` | `htotal << 16 \| hsync_len` |
+| `RK3568_VP_DSP_VTOTAL_VS_END` | `0x50` | `0xfdd90f50` | `vtotal << 16 \| vsync_len` |
+
+So `027c` is the upper half-word of `VTOTAL_VS_END` at exactly `0xfdd90f50`. For H_total, the register is at `0xfdd90f48`, not `0xfdd90f40`; the most likely explanation is that the dump prints four 32-bit words per line labelled with the first word's address, so `054a` was read from the third word of the `fdd90f40:` line. That dump format was checked for mainline only, not for the BSP.
+
+> `TODO(on-hardware)`: record the full 32-bit words at `0xfdd90f48` and `0xfdd90f50`. The low half-words should equal `hsync_len` (10) and `vsync_len` (1) if the vendor overlay above is in use.
 
 ## 6. Engineering Insights
 * Checking the same number at three layers (KMS mode → clock arithmetic → hardware register) isolates where a bring-up problem lives: a wrong mode points to the panel description (see [Experiment 15](./15_Device_Tree_and_Driver_Walkthrough.md)), a wrong register value with a correct mode points to the CRTC driver.
