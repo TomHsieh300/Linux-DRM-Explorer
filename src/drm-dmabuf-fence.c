@@ -20,7 +20,7 @@
  *
  * Progression from previous demos:
  *   modeset-double-buffer.c    -- GEM / KMS basics
- *   drm-pageflip-vs-tearing.c  -- vblank sync, tearing
+ *   drm-vblank-sync-demo.c     -- vblank sync, tearing
  *   drm-atomic-demo.c          -- atomic commit, properties
  *   drm-dmabuf-fence.c         -- DMA-BUF sharing, implicit/explicit fence
  *

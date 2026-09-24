@@ -18,4 +18,4 @@ Based on `modetest -p` output, the system features **4 CRTCs**, corresponding to
 
 ## 4. Key Takeaways
 * **Object ID**: IDs in DRM are globally unique handles assigned by the kernel.
-* **Possible CRTCs Mask**: A bitmask used to identify which Planes can be attached to which CRTCs¡Xa critical constraint during multi-display bring-up.
+* **Possible CRTCs Mask**: A bitmask used to identify which Planes can be attached to which CRTCs—a critical constraint during multi-display bring-up.

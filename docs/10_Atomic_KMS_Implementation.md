@@ -8,7 +8,7 @@ Migrate the entire display pipeline from Legacy APIs (`SetCrtc`, `PageFlip`) to 
 ## 2. Key Implementation Details
 * **The Atomic Property Model**: Unlike legacy APIs with fixed arguments, Atomic KMS treats everything (FB_ID, CRTC_ID, coordinates) as **Properties**. This implementation uses a caching mechanism to store Property IDs at startup, avoiding expensive string lookups during the animation loop.
 * **Blob Management**: Display modes (`drmModeModeInfo`) are no longer passed as structures but as **Blobs**. The kernel manages these memory blobs, and we reference them via a `MODE_ID` property.
-* **16.16 Fixed-Point Math**: Atomic KMS requires source coordinates (`SRC_X`, `SRC_W`, etc.) in **16.16 fixed-point format**. This allows for sub-pixel precision during hardware scaling¡Xa detail crucial for high-end SoCs like the RK3588.
+* **16.16 Fixed-Point Math**: Atomic KMS requires source coordinates (`SRC_X`, `SRC_W`, etc.) in **16.16 fixed-point format**. This allows for sub-pixel precision during hardware scaling—a detail crucial for high-end SoCs like the RK3588.
 * **Atomic Test-Only**: Utilized `DRM_MODE_ATOMIC_TEST_ONLY` to validate the hardware configuration before committing. This "dry-run" capability is a major safety feature of the Atomic API, preventing invalid configurations from reaching the hardware.
 
 ---

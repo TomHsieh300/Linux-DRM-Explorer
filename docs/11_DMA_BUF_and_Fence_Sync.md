@@ -1,6 +1,6 @@
+# Experiment 11: DMA-BUF (PRIME) & Fence Synchronization
 
-
-bjective
+## 1. Objective
 Explore the mechanisms of **Zero-copy memory sharing** and **Hardware Synchronization**. This experiment demonstrates how different hardware modules share the same physical memory via **DMA-BUF (PRIME)** and how **Fences** ensure data integrity between a producer (e.g., GPU/ISP) and a consumer (Display Engine).
 
 ---

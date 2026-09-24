@@ -20,7 +20,7 @@
  * property-based object model that underlies it.
  *
  * Progression from the previous demo:
- *   drm-pageflip-vs-tearing.c  -- legacy SetCrtc / PageFlip API
+ *   drm-vblank-sync-demo.c     -- legacy SetCrtc / PageFlip API
  *   drm-atomic-demo.c          -- atomic commit, properties, planes
  *
  * Three runnable modes:

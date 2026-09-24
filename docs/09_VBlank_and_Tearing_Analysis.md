@@ -17,7 +17,7 @@ Screen tearing is a **data race** between the Display Controller (Reader) and th
 
 
 ### The Solution: VBlank & Shadow Registers
-To prevent this, we must only swap buffers during the **Vertical Blanking Interval (VBlank)**¡Xthe brief pause when the controller is not reading any pixel data.
+To prevent this, we must only swap buffers during the **Vertical Blanking Interval (VBlank)**—the brief pause when the controller is not reading any pixel data.
 
 * **Shadow Registers**: Modern SoCs like the RK3588 use "shadow registers" for the framebuffer address. When we call `PageFlip`, the hardware stores the new address in a buffer and only applies it to the active register during the next VBlank.
 
