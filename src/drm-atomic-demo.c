@@ -230,8 +230,7 @@ static void print_object_properties(int fd, uint32_t obj_id,
  * for the connected display hardware.  The output lists every property
  * name and ID that can appear in a drmModeAtomicAddProperty() call.
  * ============================================================ */
-static void run_property_discovery(int fd, drmModeRes *res,
-				   struct kms_state *kms)
+static void run_property_discovery(int fd, drmModeRes *res)
 {
 	printf("============================================================\n");
 	printf(" KMS Object Property Discovery\n");
@@ -954,7 +953,7 @@ int main(int argc, char **argv)
 
 	/* Property discovery mode needs no further setup */
 	if (mode_choice == 0) {
-		run_property_discovery(kms.fd, res, &kms);
+		run_property_discovery(kms.fd, res);
 		drmModeFreeResources(res);
 		close(kms.fd);
 		return 0;

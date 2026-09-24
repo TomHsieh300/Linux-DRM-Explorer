@@ -88,7 +88,7 @@ static void modeset_destroy_fb(int fd, struct buffer_object *bo)
 	drmIoctl(fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy);
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
 	int fd;
 	drmModeRes *res;
