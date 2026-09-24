@@ -32,6 +32,8 @@ sudo modetest -M rockchip -c
 sudo cat /sys/kernel/debug/dri/0/regs
 ```
 
+> The `regs` file is not part of the generic DRM debugfs set. It comes from the **Rockchip BSP** driver: `rockchip-linux/kernel` branch `develop-6.1`, `drivers/gpu/drm/rockchip/rockchip_drm_drv.c`, registers `active_regs`, `regs`, `summary` and `mm_dump` (checked on the branch head). Mainline kernels before `v6.14` have no VOP2 debugfs files; see [Experiment 14](./14_Debugging_and_Tracing.md) for details.
+
 ## 5. Results
 ### 5.1 Video Timing Breakdown
 The target DSI panel resolution is 1024x600. The observed timing parameters are:

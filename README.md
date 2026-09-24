@@ -71,7 +71,7 @@ sudo dpkg --add-architecture arm64      # arm64 packages come from ports.ubuntu.
 sudo apt install gcc-aarch64-linux-gnu libdrm-dev:arm64
 make CROSS_COMPILE=aarch64-linux-gnu- PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
 ```
-Every `src/*.c` file becomes one binary next to its source. CI ([`.github/workflows/build.yml`](./.github/workflows/build.yml)) builds all experiments natively and for aarch64 with `-Werror`.
+Every `src/*.c` file becomes one binary next to its source. Helper scripts live in [`tools/`](./tools/) (e.g. `tools/drm-debug-capture.sh` from Experiment 14). CI ([`.github/workflows/build.yml`](./.github/workflows/build.yml)) builds all experiments natively and for aarch64 with `-Werror`.
 
 ### Documentation Conventions
 Each experiment follows the same outline: **Objective → Environment → Background → Steps / Implementation → Results → Analysis → Key Takeaways → References**.
