@@ -10,6 +10,10 @@
 # Everything that needs eyes on the panel (tearing, blending, colour bars) is
 # NOT automated; see docs/HARDWARE_VALIDATION.md.
 
+# The inner `sh -c '...'` snippets expand their variables in the child shell
+# on purpose, so single quotes are intended.
+# shellcheck disable=SC2016
+
 set -u
 
 usage() {
@@ -147,6 +151,26 @@ run_bin 10-atomic-property-discovery.txt ./src/drm-atomic-demo
 run_bin 12-plane-props-list.txt ./src/drm-plane-props --list -d "$DEV"
 run_bin 13-formats-modifiers-list.txt ./src/drm-formats-modifiers --list -d "$DEV"
 run_bin 16-hotplug-topology.txt ./src/drm-hotplug-monitor --topology -d "$DEV"
+
+# ---- Experiment 18: GPU driver stack (read-only) --------------------------
+run 18-dev-nodes.txt sh -c 'ls -la /dev/mali* /dev/dri/ /dev/dma_heap/ 2>&1'
+run 18-gpu-modules.txt sh -c 'ls /sys/module | grep -iE "mali|kbase|bifrost|panfrost|panthor"; echo "--- lsmod"; lsmod 2>/dev/null | grep -iE "mali|kbase|bifrost|panfrost|panthor"'
+run 18-gpu-dt-node.txt sh -c 'for n in /proc/device-tree/gpu@* /proc/device-tree/*/gpu@*; do [ -d "$n" ] || continue; echo "== $n"; printf "compatible: "; tr "\0" " " < "$n/compatible"; echo; [ -r "$n/status" ] && { printf "status: "; tr -d "\0" < "$n/status"; echo; }; done'
+run 18-gpu-driver-binding.txt sh -c 'for d in /sys/bus/platform/devices/*.gpu; do [ -e "$d" ] || continue; echo "$d -> $(readlink "$d/driver")"; done'
+run 18-gpuinfo.txt sh -c 'for f in $(find /sys/devices -maxdepth 6 -name gpuinfo 2>/dev/null); do echo "== $f"; cat "$f"; done'
+run 18-mali-debugfs-ls.txt sh -c 'ls -la /sys/kernel/debug/mali0/ 2>&1'
+run 18-render-node-names.txt sh -c 'for d in /sys/kernel/debug/dri/*; do [ -r "$d/name" ] && echo "$d: $(cat "$d/name")"; done'
+run 18-gpu-devfreq.txt sh -c 'for d in /sys/class/devfreq/*; do echo "== $d"; cat "$d/name" "$d/cur_freq" "$d/available_frequencies" 2>/dev/null; done'
+run 18-gpu-libs.txt sh -c 'ldconfig -p | grep -iE "mali|libEGL|libGLESv2|libgbm|libvulkan"; echo "--- files"; ls -la /usr/lib/*/libmali* /usr/lib/libmali* 2>&1; echo "--- packages"; dpkg-query -W -f "\${Package}\t\${Version}\n" 2>/dev/null | grep -iE "^(libmali|mali|mesa|libegl|libgles|libgbm|libglvnd|libgl1-mesa)"'
+if have eglinfo; then
+	run 18-eglinfo.txt timeout 60 eglinfo
+else
+	echo "eglinfo not installed (apt install mesa-utils)" > "$OUT/18-eglinfo-MISSING.txt"
+fi
+if have vulkaninfo; then
+	run 18-vulkaninfo.txt timeout 60 vulkaninfo --summary
+fi
+run 18-dmesg-gpu.txt sh -c 'dmesg | grep -iE "mali|kbase|panthor|panfrost|gpu" | tail -200'
 
 # ---- Experiment 17: frame timing (only with --active) --------------------
 if [ "$ACTIVE" -eq 1 ]; then

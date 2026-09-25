@@ -32,6 +32,7 @@ The script writes `hw-results-<date>-<time>/` plus a `.tar.gz` of it. Every file
 | `14-*.txt` | [14](./14_Debugging_and_Tracing.md) §5 (debugfs files present, tracepoints available) |
 | `16-hotplug-topology.txt` | [16](./16_Multi_Display_and_Hotplug.md) §5 (DSI only; repeat with HDMI connected, see Part B) |
 | `17-frame-timing-*.txt/.csv` (`--active` only) | [17](./17_Frame_Timing_Measurement.md) §5.1–5.3 |
+| `18-*.txt` | [18](./18_GPU_Stack_Discovery.md) §5 (GPU driver, device node, libmali/Mesa, EGL extensions). Install `mesa-utils` first so `eglinfo` is available. |
 | `99-dmesg-drm.txt` | Context for any failure above |
 
 ---

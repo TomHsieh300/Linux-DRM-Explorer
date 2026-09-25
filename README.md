@@ -8,9 +8,9 @@ A systematic and deep-dive exploration of the **Linux DRM/KMS subsystem** on the
 * **Zero-Copy Pipelines**: Implementation of **DMA-BUF (PRIME)** for efficient cross-device memory sharing without CPU intervention.
 * **Performance Optimization**: Inner-loop **branchless rendering** and **Fence-based hardware synchronization** to eliminate UI jitter and tearing.
 
-## The 17-Stage Learning Roadmap
+## The Learning Roadmap
 
-I have structured the bring-up process into 17 progressive experiments:
+I have structured the bring-up process into progressive experiments:
 
 ### Phase 1: Hardware & Subsystem Basics
 1. [**KMS Pipeline Mapping**](./docs/01_Hardware_Inventory.md): Analyzing internal VOP2 resources (VP0-VP3) and Plane constraints.
@@ -38,6 +38,11 @@ I have structured the bring-up process into 17 progressive experiments:
 15. [**Device Tree & Driver Walkthrough**](./docs/15_Device_Tree_and_Driver_Walkthrough.md): Following the DSI panel from the OF graph through the VOP2/DSI driver bind flow.
 16. [**Multi-Display & Hotplug**](./docs/16_Multi_Display_and_Hotplug.md): Routing matrix (`possible_crtcs`), CRTC assignment and netlink hotplug monitoring.
 17. [**Frame Timing Measurement**](./docs/17_Frame_Timing_Measurement.md): Quantifying flip intervals, latency and missed VBlanks.
+
+### Phase 5: GPU → Display Pipeline
+> In progress. Experiment 18 identifies the GPU driver stack on the board; experiments 19 (GPU render → dma-buf → KMS, zero-copy) and 20 (tracing the path from userspace to kernel) will be written from its results.
+
+18. [**GPU Stack Discovery**](./docs/18_GPU_Stack_Discovery.md): BSP kbase + libmali vs. mainline panthor + Mesa, and the EGL extensions that decide how a zero-copy GPU → KMS path can be built.
 
 ## Tools & Environment
 * **Target Hardware**: LubanCat 5 (Rockchip RK3588, VOP2)
