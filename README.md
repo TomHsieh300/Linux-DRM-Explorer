@@ -30,7 +30,7 @@ I have structured the bring-up process into 17 progressive experiments:
 11. [**DMA-BUF & Fence Sync**](./docs/11_DMA_BUF_and_Fence_Sync.md): Simulating cross-device pipelines with **PRIME** and explicit fences (`IN_FENCE_FD`).
 
 ### Phase 4: Composition, Topology & Observability
-> Experiments 12–17 are implemented and compile cleanly, but have **not yet been run on the board**; their Results sections are placeholders.
+> Experiments 12–17 are implemented and compile cleanly, but have **not yet been run on the board**; their Results sections are placeholders. The [Hardware Validation Checklist](./docs/HARDWARE_VALIDATION.md) lists what to run and observe, and `tools/collect-results.sh` gathers the read-only output in one go.
 
 12. [**Plane Properties & Blending**](./docs/12_Plane_Properties_and_Blending.md): Driving `zpos`, `alpha`, `pixel blend mode`, rotation and scaling through atomic commits.
 13. [**Pixel Formats & Modifiers**](./docs/13_Pixel_Formats_and_Modifiers.md): Decoding the `IN_FORMATS` blob (incl. AFBC) and scanning out an NV12 buffer.
