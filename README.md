@@ -52,16 +52,17 @@ I have structured the bring-up process into progressive experiments:
 ### Test Environment
 Register addresses, IRQ numbers and object IDs quoted in the experiments depend on the exact kernel and board configuration. Record the versions used so that results can be reproduced:
 
-| Item | Value | How to obtain |
-| :--- | :--- | :--- |
-| Board | LubanCat 5 (RK3588) | — |
-| OS image | `TODO` | `cat /etc/os-release` |
-| Kernel version | `TODO` | `uname -a` |
-| Kernel source (BSP tree / branch / commit) | `TODO` | from the image vendor |
-| DRM driver | `TODO` | `cat /sys/kernel/debug/dri/0/name` |
-| libdrm | `TODO` | `pkg-config --modversion libdrm` |
-| modetest | `TODO` | `dpkg -l libdrm-tests` |
-| Display | 1024x600 MIPI-DSI panel on VP3 | [Experiment 03](./docs/03_DSI_Panel_Bringup.md) |
+| Item | On the board | SDK build ([inventory](./docs/notes/lubancat-inventory.md); not yet confirmed to be what the board runs) | How to obtain on the board |
+| :--- | :--- | :--- | :--- |
+| Board | LubanCat 5 (RK3588) | `LubanCat_Linux_rk3588_SDK_20260421` | — |
+| OS image | `TODO` | Ubuntu 20.04.6 LTS lite rootfs | `cat /etc/os-release` |
+| Kernel version | `TODO` | 5.10.160 (`linux-image-5.10.160_5.10.160-18_arm64.deb`) | `uname -a` |
+| Kernel source (BSP tree / branch / commit) | `TODO` | `github.com/LubanCat/kernel` @ `ca43ccfcb96c` (detached HEAD), `lubancat_linux_rk3588_defconfig` | from the image vendor |
+| DRM driver | `TODO` | `rockchipdrm` with `CONFIG_ROCKCHIP_VOP2=y` | `cat /sys/kernel/debug/dri/0/name` |
+| libdrm | `TODO` | 2.4.107-8ubuntu1~20.04.2 | `pkg-config --modversion libdrm` |
+| modetest | `TODO` | unknown (not in the inventory) | `dpkg -l libdrm-tests` |
+| GPU stack | `TODO` | kbase (`CONFIG_MALI_BIFROST=y`, CSF) + libmali `valhall-g610-g13p0-x11-gbm` 1.9-1 | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
+| Display | 1024x600 MIPI-DSI panel on VP3 | candidate overlay `rk3588-lubancat-5-dsi1-vp3-1024x600-7inch-ebf410173` | [Experiment 03](./docs/03_DSI_Panel_Bringup.md) |
 
 > Kernel-side explanations in the docs cite upstream `torvalds/linux` source files and tags (mainly `v6.1` and `master`; RK3588 VOP2 support is upstream since `v6.8`). The Rockchip BSP kernel carries vendor patches, so behaviour may differ—each doc says where this matters.
 
