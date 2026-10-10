@@ -4,3 +4,6 @@ src/*
 .DS_Store
 hw-results-*
 drm-capture-*
+
+# External board tree is never committed (see docs/STUDY_PLAN.md)
+/LubanCat/

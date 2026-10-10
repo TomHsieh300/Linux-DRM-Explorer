@@ -3,7 +3,9 @@
 Status: **design proposal**. Nothing below is implemented yet.
 
 > **Scope note.** This plan is based on the contents of this repository only (README, `docs/01`–`18`, `HARDWARE_VALIDATION.md`, `src/`, `tools/`, `Makefile`, CI, git history).
-> The LubanCat working directory (`/home/tom/LubanCat`) was **not accessible** when this was written, so nothing here has been checked against its kernel tree, rootfs, images or notes. Items that depend on it are marked `[needs LubanCat tree]`.
+> The LubanCat working directory (`/home/tom/LubanCat`, which the author says holds the kernel tree, images and everything else) was **not accessible** from the cloud session that wrote this, so nothing here has been checked against it. Items that depend on it are marked `[needs LubanCat tree]` and should be verified locally.
+>
+> **Policy: the LubanCat directory is never committed or pushed to this repository** (kernel trees, images and toolchains are too large). It stays outside the repo; labs refer to it through an environment variable (`LUBANCAT_DIR`, default `/home/tom/LubanCat`) and the repo contains only small scripts, notes and results.
 
 ---
 
@@ -28,11 +30,20 @@ Status: **design proposal**. Nothing below is implemented yet.
 3. **Userspace-only.** Everything is a libdrm client. There is no lab where the reader *writes or modifies kernel code*, though doc 15 reads the driver.
 4. **Single platform.** No mainline vs BSP comparison is carried through the labs; no way to practise without the board.
 5. **No self-assessment.** No exercises, expected outputs, or pass/fail criteria per experiment.
-6. **Missing topics** (see §4): GPU path (19/20 planned), color pipeline, video/camera buffers, compositor-level use of KMS, power, panel/backlight, DRM from the kernel side.
+6. **Missing topics** (see §5): GPU path (19/20 planned), color pipeline, video/camera buffers, compositor-level use of KMS, power, panel/backlight, DRM from the kernel side.
 
 ---
 
-## 2. Design principles
+## 2. Audience and goal
+
+The only reader is the author, whose goal is to become a **domain expert in Linux DRM/KMS and the GPU-to-display stack** (BSP / driver level), not to produce a polished public book. That changes the design:
+
+* Depth over polish: kernel source reading, driver writing and debugging take priority over prose.
+* The standard for "done" with a topic is: can explain it from the kernel source, reproduce it on the board, and modify the driver to change its behaviour.
+* Public-quality editing is optional and comes last.
+* Language: **English throughout** (docs, code comments, lab text).
+
+## 3. Design principles
 
 1. **Validate before extending.** Phase 0 below is a hard gate for anything that depends on measured numbers.
 2. **Two artefacts, one source of truth.** The *textbook* explains concepts and cites kernel source; the *labs* are hands-on and link into the textbook. A concept is written once, in the textbook.
@@ -42,7 +53,7 @@ Status: **design proposal**. Nothing below is implemented yet.
 
 ---
 
-## 3. Proposed textbook structure
+## 4. Proposed textbook structure
 
 Working title: *Linux DRM/KMS and the GPU-to-Display Pipeline, on RK3588*.
 Each chapter = concept text (new) + pointer to the existing experiment doc(s) as the worked example.
@@ -70,7 +81,7 @@ Each chapter = concept text (new) + pointer to the existing experiment doc(s) as
 
 ---
 
-## 4. Proposed lab series
+## 5. Proposed lab series
 
 Numbering continues the existing sequence. Labs 19–20 are already promised by the README.
 
@@ -100,6 +111,13 @@ Numbering continues the existing sequence. Labs 19–20 are already promised by 
 * **L29 Direct scanout & latency.** Fullscreen client → direct scanout; compare flip latency to the L17 baseline.
 * **L30 Power & robustness.** DPMS, runtime PM, hotplug during commit, restoring state on `SIGINT` (extends L16/L12 cleanup patterns).
 
+### Phase 9 — Expert track (new, driven by the goal in §2)
+* **L31 Source-reading drills.** For each earlier lab, trace one ioctl from `drm_ioctl()` to the driver callback in the exact tree on the board `[needs LubanCat tree]`; write a one-page call-chain note. Self-check: draw it from memory.
+* **L32 BSP vs mainline diff study.** Compare the Rockchip BSP display driver and the mainline `rockchip_drm_vop2.c` for the same feature (e.g. plane `zpos`, AFBC, interrupt handling). Output: a table of differences with file/function references. Requires both trees `[needs LubanCat tree]`.
+* **L33 Fix or extend a driver.** Pick a real defect or missing feature found during Phase 0–8 (e.g. a property the VOP2 driver does not expose), implement it in the board's tree, and verify with the earlier lab tools.
+* **L34 Upstream-style patch.** Prepare the L33 change as a mailing-list-quality patch (checkpatch, commit message, test evidence) against current mainline; submission itself is optional.
+* **L35 Hardware reference.** Read the RK3588 TRM sections for VOP2 / DSI / GPU `[needs the TRM, not in repo]` and annotate register-level behaviour against traces from L14.
+
 ### Lab template (add to every lab)
 ```
 Goal · Prerequisites (textbook chapter, earlier labs) · Setup
@@ -110,7 +128,7 @@ Stretch goals · Results (measured, with kernel/tree stated) · References
 
 ---
 
-## 5. Delivery roadmap
+## 6. Delivery roadmap
 
 | Step | Deliverable | Depends on |
 | :--- | :--- | :--- |
@@ -121,15 +139,23 @@ Stretch goals · Results (measured, with kernel/tree stated) · References
 | 5 | L21–L23 (kernel side, VKMS first so it is board-optional) | none for L21; kernel tree for L22/L23 |
 | 6 | Textbook chapters 1–11 written from existing docs | Step 2 |
 | 7 | Phases 7–8, chapters 12–17 | Steps 1, 4 |
-| 8 | CI: add smoke tests that need no hardware (e.g. run tools against VKMS in a container if the CI runner allows loading it — **unverified**) | Step 5 |
+| 8 | Phase 9 expert track, interleaved with 4–7 (do L31 alongside each lab rather than at the end) | `LUBANCAT_DIR` |
+| 9 | CI: add smoke tests that need no hardware (e.g. run tools against VKMS in a container if the CI runner allows loading it — **unverified**) | Step 5 |
 
 ---
 
-## 6. Open questions for the author
+## 7. Handling the external LubanCat directory
 
-1. What is in `/home/tom/LubanCat` (kernel tree? rootfs? images? notes)? Which kernel branch and commit does the board actually run?
-2. Is the audience the author alone, a team (BSP/IC design, per the README), or public readers? This decides tone and how much prerequisite knowledge to assume.
-3. Is a kernel-module lab (L22) acceptable, i.e. can the board build and load out-of-tree modules, and is it safe to risk the display on it?
-4. Is an HDMI monitor available (needed for L16 hotplug and any multi-display lab)?
-5. Which media sources are available for L26 (hardware-decoded video stack on the image)?
-6. Preferred language for the textbook: the repo is in English; the user conversation was in Chinese.
+* Never `git add` it. Add `/LubanCat/` and `LUBANCAT_DIR` mounts to `.gitignore` if it is ever symlinked into the repo.
+* Scripts take the path from `LUBANCAT_DIR` (default `/home/tom/LubanCat`); they must not copy files out of it.
+* Notes derived from it (call chains, diffs, register annotations) are committed as small text files with the exact tree path, branch and commit they were checked against.
+* Cloud sessions cannot see it. Anything that needs it is done locally, or the relevant small pieces are provided explicitly.
+
+---
+
+## 8. Open questions
+1. Which kernel branch and commit does the board actually run, and does `/home/tom/LubanCat` contain more than one tree (BSP and mainline)?
+2. Can the board build and load out-of-tree modules, and is it acceptable to risk the display on it (L22)?
+3. Is an HDMI monitor available (L16, multi-display labs)?
+4. Which video/decoder stack does the image provide (L26)?
+5. Is the RK3588 TRM available locally (L35)?
