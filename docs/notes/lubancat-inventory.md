@@ -192,11 +192,3 @@ The kernel tree's own `Documentation/gpu/` and
 
 - Path: `prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc`
 - `--version`: `aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 10.3.1 20210621`
-
-## Implications for the study plan
-
-- The GPU kernel driver is vendor **kbase** (`bifrost/`, CSF, g18p0), used with the
-  closed **libmali g13p0**. Panthor/Panfrost labs would need a mainline kernel and Mesa,
-  and neither is in this SDK.
-- VKMS source is in the tree but disabled. Enabling it means setting `CONFIG_DRM_VKMS=m` and rebuilding.
-- The display path for the DSI labs is VOP2 VP2/VP3 → `dw-mipi-dsi2` → `panel-simple` (`simple-panel-dsi`), with timings set in the DT overlays above.
