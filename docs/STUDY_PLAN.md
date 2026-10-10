@@ -3,7 +3,9 @@
 Status: **design proposal**. Nothing below is implemented yet.
 
 > **Scope note.** This plan is based on the contents of this repository only (README, `docs/01`–`18`, `HARDWARE_VALIDATION.md`, `src/`, `tools/`, `Makefile`, CI, git history).
-> Facts about the LubanCat SDK (`/home/tom/LubanCat`) come from [`notes/lubancat-inventory.md`](./notes/lubancat-inventory.md), a read-only survey taken on the host on 2026-10-10. That survey describes the **SDK build**, not the running board: whether the board runs this exact kernel and rootfs has **not** been confirmed (Phase 0, L0.1).
+> Two read-only surveys feed this plan:
+> * [`notes/board-runtime.md`](./notes/board-runtime.md) — the **running board** (serial console, 2026-10-10). This is the reference for everything that runs.
+> * [`notes/lubancat-inventory.md`](./notes/lubancat-inventory.md) — the SDK in `/home/tom/LubanCat`. **The board does not run this SDK's kernel or image**, so its kernel source, Kconfig and DT facts describe the SDK only; its userspace package facts still need a per-item check against the board.
 >
 > **Policy: the LubanCat directory is never committed or pushed to this repository** (kernel trees, images and toolchains are too large). It stays outside the repo; labs refer to it through an environment variable (`LUBANCAT_DIR`, default `/home/tom/LubanCat`) and the repo contains only small scripts, notes and results.
 
@@ -18,20 +20,24 @@ Status: **design proposal**. Nothing below is implemented yet.
 | Planned, unwritten | Experiments 19 (GPU render → dma-buf → KMS) and 20 (tracing userspace → kernel), per README Phase 5 |
 | Build / CI | `make` builds every `src/*.c`; GitHub Actions builds native and aarch64 with `-Werror`. No automated tests that run anything |
 | Structure | Chronological lab notes, each with Objective → Environment → Background → Steps → Results → Analysis → Takeaways → References |
-| Target | Single board: LubanCat 5 (RK3588, VOP2), one 1024x600 DSI panel on VP3 (per README) |
-| SDK (from the inventory) | `LubanCat_Linux_rk3588_SDK_20260421`: BSP kernel **5.10.160** (`LubanCat/kernel` @ `ca43ccf`), defconfig `lubancat_linux_rk3588_defconfig`, Ubuntu **20.04.6** lite rootfs, libdrm **2.4.107**, libmali `valhall-g610-g13p0-x11-gbm` 1.9-1, MPP 1.5.0, librga 2.2.0, gcc 10.3 cross toolchain. No mainline kernel tree, no TRM, no source for libmali/MPP/RGA |
+| Board (running) | **LubanCat-5IO** (`embedfire,rk3588-lubancat-5io`), kernel **6.1.99-rk3588** `#7` built 2026-02-13 on `tom-B550M-AORUS-ELITE` with the Arm gcc 10.3-2021.07 toolchain (source tree/commit **unknown**, no `linux-image` package), Ubuntu 20.04.6 (image built 2026-02-13), libdrm 2.4.107 (+`libdrm-dev`), `modetest` from `rktoolkit` |
+| DRM devices (running) | `card0` = `rockchip-drm` (`display-subsystem`), `card1`/`renderD129` = `rknpu` (NPU); `renderD128` belongs to card0. `/dev/mali0` present (kbase); dma-heaps `system`, `system-uncached`, `cma` |
+| Outputs (running) | card0 connectors: DP-1, HDMI-A-1, HDMI-A-2 (all disconnected at capture), **Writeback-1**. **No DSI connector**: DSI overlays are commented out in `uEnv`; `5io-dsi{0,1}-generic` plugins are auto-loaded only when an EEPROM is detected at 0x51 on I²C 2/5. Active overlays: `5io-hdmi0-vp0`, `dp0-vp1`, `5io-hdmi1-vp2` |
+| SDK on host | `LubanCat_Linux_rk3588_SDK_20260421`: kernel 5.10.160 @ `ca43ccf`, Ubuntu 20.04.6 lite rootfs, libmali `valhall-g610-g13p0-x11-gbm` 1.9-1, MPP 1.5.0, librga 2.2.0, gcc 10.3 toolchain. No mainline tree, no TRM, no source for libmali/MPP/RGA. **Not what the board runs** |
 
-### Conflicts between the SDK and the existing docs
-The inventory contradicts assumptions in several docs. These must be resolved before new content builds on them:
+### Conflicts between the running board and the existing docs
+These must be resolved before new content builds on them (Phase 0, L0.4):
 
-| Doc(s) | Doc currently says | SDK inventory says | Action |
+| Doc(s) | Doc currently says | Board says | Action |
 | :--- | :--- | :--- | :--- |
-| 03, 18, `HARDWARE_VALIDATION.md` | Vendor kernel branch `lbc-develop-6.1` (doc 03 also cites `rockchip-linux/kernel` `develop-6.1`) | Kernel `make kernelversion` = **5.10.160**, detached HEAD `ca43ccf` | Re-check every BSP citation (overlay timings, `regs` debugfs, kbase files, defconfig) against `kernel/` at `ca43ccf`, or state that the 6.1 branch was used and why |
-| 01, 02, 07–12 | API/option details checked against libdrm **2.4.125** | Rootfs has libdrm **2.4.107** | Run `modetest -h` on the board; check that every libdrm call used in `src/` exists in 2.4.107 |
-| 18 | `eglinfo` from Ubuntu 24.04 `mesa-utils` 9.0.0 | Rootfs is Ubuntu 20.04; no Mesa GL/EGL; EGL/GBM come from libmali | Find out whether `eglinfo` is installable on 20.04 (not verified); otherwise write a small EGL query program |
-| 18 | GPU driver unknown, two candidate stacks | Tree has kbase (`bifrost/`, `g18p0-01eac0`, `CONFIG_MALI_CSF_SUPPORT=y`), **no** `panthor/`; rootfs has libmali g13p0 | Experiment 18 can now be narrowed to the BSP stack; confirm on the board (kbase version vs libmali version mismatch, if any, must be checked at runtime, not assumed) |
-| README | Cross build on Ubuntu 24.04 multiarch (`libdrm-dev:arm64`, newer headers) | Target libdrm is 2.4.107; SDK ships its own gcc 10.3 toolchain | Decide whether to build against the board's libdrm (sysroot from `ubuntu/binary`) so binaries cannot depend on newer symbols |
-| 03 | Panel = 7" ebf410173 overlay on DSI1/VP3, not confirmed | That overlay exists (`clock-frequency` 51668640, hfp/hsync/hbp 160/10/160, vfp/vsync/vbp 12/1/23); a DSI0/VP2 version exists too | Confirm which overlay is loaded (L0.3) |
+| README, 01, 03, 15, `HARDWARE_VALIDATION.md` | Board is a **LubanCat 5**; display is a 1024x600 **DSI panel on VP3**, CRTC ID 208 | Board is a **LubanCat-5IO**; **no DSI connector** at this boot; active outputs are HDMI0/VP0, DP0/VP1, HDMI1/VP2 | Decide the reference display setup (see open question 1). Either reconnect the DSI panel and enable the matching `5io-dsi*` overlay, or move the experiments to HDMI/DP. Results in 01/03 recorded with the DSI panel must state which board/kernel/overlay they came from |
+| 03, 18 | BSP citations from `LubanCat/kernel` `lbc-develop-6.1` / `rockchip-linux/kernel` `develop-6.1` | Running kernel is 6.1.99-rk3588, but its source commit is unknown | Identify the running kernel's source tree (open question 2), then re-check the citations against it. Do **not** use the SDK 5.10 tree for this |
+| 01, 02, 07–12 | API/option details checked against libdrm **2.4.125** | libdrm **2.4.107** | Run `modetest -h` (rktoolkit build) on the board; check every libdrm call in `src/` exists in 2.4.107. The board has `libdrm-dev`, so a native build on the board is the direct test |
+| 18 | `eglinfo` via Ubuntu 24.04 `mesa-utils` 9.0.0; GPU stack unknown | Ubuntu 20.04; `/dev/mali0` present → kbase. libmali package on the board **not yet checked** (the SDK's g13p0 build is SDK-only evidence) | Check `dpkg -l 'libmali*'` on the board; find out whether `eglinfo` is available on 20.04 (not verified) or write a small EGL query program |
+| `src/*.c`, `tools/` | Hard-code `/dev/dri/card0` as the display device | card0 is the display **at this boot**; card1 is the NPU. Probe order between `rockchip-drm` and `rknpu` is not guaranteed by anything checked so far | Keep card0 as default but select the device by driver name (`drmGetVersion()->name == "rockchip"`) or document `-d` everywhere |
+| README build | Cross build on Ubuntu 24.04 multiarch (newer libdrm headers) | Target libdrm is 2.4.107; board has `libdrm-dev` and the running kernel was built with the Arm gcc 10.3 toolchain | Either build natively on the board, or cross-build against a sysroot of the board's rootfs |
+
+New possibilities the board offers, not covered by any doc yet: a **Writeback connector** (KMS writeback → capture the composed frame into a buffer), **two HDMI + one DP** outputs (multi-display labs if monitors are available), and an **NPU DRM device** (a second DRM driver on the same SoC to compare against `rockchip-drm`).
 
 ### What is strong
 * Source-cited kernel explanations and an explicit "not measured unless it was" rule.
@@ -99,26 +105,27 @@ Each chapter = concept text (new) + pointer to the existing experiment doc(s) as
 Numbering continues the existing sequence. Labs 19–20 are already promised by the README.
 
 ### Phase 0 — Validate what exists (gate)
-* **L0.1** Fill the README Test Environment table (OS, kernel, tree/commit, libdrm, driver).
-* **L0.2** Run `tools/collect-results.sh` (+ `--active`) and the manual Part B list; fill all `TODO(on-hardware)` in docs 01–18.
-* **L0.3** Resolve the open questions in `HARDWARE_VALIDATION.md` (live DT vs documented timings, which DSI overlay is loaded, source of the VP0 "8K" claim). The SDK builds `rk3588-lubancat-generic.dts`; how that maps to the LubanCat 5 board DTS at boot is unknown and should be answered here.
-* **L0.4** Resolve every row of "Conflicts between the SDK and the existing docs" (§1).
+* **L0.1** Fill the README Test Environment table from `notes/board-runtime.md` (done for what was collected); still missing: running kernel source/commit and `/proc/config.gz`, loaded DTB, libmali package.
+* **L0.2** Choose the reference display setup (open question 1), then run `tools/collect-results.sh` (+ `--active`) and the manual Part B list; fill all `TODO(on-hardware)` in docs 01–18 with results from **this** board.
+* **L0.3** Resolve the open questions in `HARDWARE_VALIDATION.md`: which DTB U-Boot loads (`/boot/rk-kernel.dtb` exists; extlinux uses `devicetreedir /`), why no DSI panel probed, source of the VP0 "8K" claim (the board's `uEnv` comment says 8K output occupies VP0+VP1 and needs the `hdmi-8k` overlay — a vendor comment, not a hardware reference).
+* **L0.4** Resolve every row of "Conflicts between the running board and the existing docs" (§1).
 * *Exit criterion:* no `TODO(on-hardware)` remaining in docs 01–18, or each remaining one has a stated reason.
 
 ### Phase 5 — GPU → Display (already planned)
-* **L19 GPU render → dma-buf → KMS.** On this SDK the stack is kbase + libmali (`x11-gbm` build, which ships `libgbm.so`); whether its EGL exposes the dma-buf import / native-fence extensions is still unknown until queried on the board. Path chosen from Experiment 18's EGL extension results (GBM scanout / dma-buf import / native-fence → `IN_FENCE_FD`). Baseline: `glReadPixels` copy; measure what zero-copy saves with the L17 timing tool.
+* **L19 GPU render → dma-buf → KMS.** On the board the kernel side is kbase (`/dev/mali0`); the userspace library on the board is not yet checked (the SDK rootfs has libmali `x11-gbm`, which ships `libgbm.so`). Whether its EGL exposes the dma-buf import / native-fence extensions is still unknown until queried on the board. Path chosen from Experiment 18's EGL extension results (GBM scanout / dma-buf import / native-fence → `IN_FENCE_FD`). Baseline: `glReadPixels` copy; measure what zero-copy saves with the L17 timing tool.
 * **L20 End-to-end trace.** One frame from GL call to scanout: ioctl boundary, fences, atomic commit, vblank event; produced with the L14 capture script.
 
 ### Phase 6 — Kernel-side (new)
-* **L21 VKMS as a sandbox** `[board-optional]`. Two variants: (a) on a PC with a distro kernel; (b) on the board, building `drivers/gpu/drm/vkms` (present in the SDK tree, 1697 lines incl. `vkms_writeback.c`) as a module from `kernel/`, since `CONFIG_DRM_VKMS` is not set but `CONFIG_MODULES=y`. Whether it builds and loads against the 5.10 BSP tree is not verified. Run the existing atomic/plane tools against it and compare with the VOP2 output of L01/L16.
-* **L22 Minimal KMS driver.** Out-of-tree module that registers one plane + CRTC + connector with a fake vblank timer, driven by `src/drm-atomic-demo`. Goal: the reader implements `atomic_check`/`atomic_flush` themselves. Target kernel: the SDK's 5.10.160 (`kernel/` at `ca43ccf`), built with the SDK gcc 10.3 toolchain and `CONFIG_MODULES=y`. Choose the helper API by reading that tree's `include/drm/` (upstream has been phasing out the simple-pipe helpers, so a 5.10 design will not port unchanged to mainline — note the differences for L32).
+* **L21 VKMS as a sandbox** `[board-optional]`. Two variants: (a) on a PC with a distro kernel; (b) on the board, building `vkms` as a module against the **running 6.1.99 kernel's** source and config (both still to be located; the SDK 5.10 tree cannot build modules for it). Run the existing atomic/plane tools against it and compare with the VOP2 output of L01/L16.
+* **L22 Minimal KMS driver.** Out-of-tree module that registers one plane + CRTC + connector with a fake vblank timer, driven by `src/drm-atomic-demo`. Goal: the reader implements `atomic_check`/`atomic_flush` themselves. Target kernel: the running **6.1.99-rk3588**; a module must be built from the exact source and `.config` of that kernel, which are not located yet (open question 2). Choose the helper API by reading that tree's `include/drm/` (upstream has been phasing out the simple-pipe helpers — note differences for L32).
 * **L23 Add a property.** Add a custom plane/CRTC property to L22 and read/write it from userspace; ties back to L10/L12.
-* **L24 Panel driver exercise.** All LubanCat 5 DSI overlays use `compatible = "simple-panel-dsi"`, matched in `drivers/gpu/drm/panel/panel-simple.c` (5458 lines in the SDK tree); DSI host is `dw-mipi-dsi2-rockchip.c` / `dw-mipi-dsi-rockchip.c` + `bridge/synopsys/dw-mipi-dsi.c`. Trace how the overlay's `display-timings` and init sequence reach the panel and DSI host; then change one timing value in a copy of the overlay and observe via L03/L17.
+* **L24 Panel driver exercise.** Needs a DSI panel attached and a `5io-dsi*` overlay enabled (no DSI connector at the captured boot). In the SDK tree the LubanCat DSI overlays use `compatible = "simple-panel-dsi"` (`drivers/gpu/drm/panel/panel-simple.c`) with the Synopsys DSI host drivers; re-check this in the running 6.1.99 tree. Trace how the overlay's `display-timings` and init sequence reach the panel and DSI host; then change one timing value in a copy of the overlay and observe via L03/L17.
 
 ### Phase 7 — Color, media and 2D (new; each needs a capability check first)
 * **L25 Color pipeline.** Discover whether CRTC `GAMMA_LUT` / `CTM` and plane `COLOR_ENCODING`/`COLOR_RANGE` exist on this VOP2 driver, then use them. Extends L13's BT.601/709 observation.
-* **L26 Video → plane.** Decoded NV12 buffer → dma-buf → overlay plane. The rootfs provides Rockchip MPP 1.5.0 (`librockchip-mpp1`, `-dev`, `rockchip-mpp-demos`) and `gstreamer1.0-rockchip1` 1.14-4; prebuilt only, no source in the SDK. Start from the MPP API and export the decoder's output buffer as a dma-buf (mechanism to be verified in the MPP headers).
-* **L27 2D engine.** Rockchip RGA for scale/convert into a scanout buffer, using the rootfs `librga2` / `librga-dev` 2.2.0 (prebuilt; no source in the SDK). Which RGA kernel driver the 5.10 tree builds is not yet checked.
+* **L26 Video → plane.** Decoded NV12 buffer → dma-buf → overlay plane. The SDK rootfs provides Rockchip MPP 1.5.0 (`librockchip-mpp1`, `-dev`, `rockchip-mpp-demos`) and `gstreamer1.0-rockchip1` 1.14-4; prebuilt only, no source in the SDK. Start from the MPP API and export the decoder's output buffer as a dma-buf (mechanism to be verified in the MPP headers).
+* **L25b Writeback.** The board exposes `card0-Writeback-1`. Use a writeback connector (`WRITEBACK_FB_ID`, `WRITEBACK_OUT_FENCE_PTR`) to capture the composed output of a CRTC into a buffer and compare it with what was committed — a way to verify plane/blend results (L12, L13) without a camera. Which CRTCs it can attach to must be read from its `possible_crtcs` on the board.
+* **L27 2D engine.** Rockchip RGA for scale/convert into a scanout buffer, using the SDK rootfs's `librga2` / `librga-dev` 2.2.0 (prebuilt; no source in the SDK). Which RGA kernel driver the running 6.1.99 kernel has, and whether `librga` is installed on the board, are not yet checked.
 
 ### Phase 8 — System level (new)
 * **L28 Compositor behaviour.** Run a Wayland compositor on KMS; use L14 tracing and L12 plane-props to see which layers become hardware planes vs GPU composition.
@@ -126,11 +133,11 @@ Numbering continues the existing sequence. Labs 19–20 are already promised by 
 * **L30 Power & robustness.** DPMS, runtime PM, hotplug during commit, restoring state on `SIGINT` (extends L16/L12 cleanup patterns).
 
 ### Phase 9 — Expert track (new, driven by the goal in §2)
-* **L31 Source-reading drills.** For each earlier lab, trace one ioctl from `drm_ioctl()` to the driver callback in `kernel/` at `ca43ccf` (5.10.160; VOP2 is `rockchip_drm_vop2.c` 11801 lines + `rockchip_vop2_reg.c` 4006 + `rockchip_vop2_clk.c` 332); write a one-page call-chain note. Self-check: draw it from memory.
-* **L32 BSP vs mainline diff study.** Compare the Rockchip BSP display driver and the mainline `rockchip_drm_vop2.c` for the same feature (e.g. plane `zpos`, AFBC, interrupt handling). Output: a table of differences with file/function references. The SDK has only the 5.10 BSP tree; a **mainline checkout must be added** outside the repo (RK3588 VOP2 data is upstream from v6.8, panthor from v6.10, per docs 12 and 18). The gap is large (5.10 BSP vs ≥ v6.8), so compare per feature, not per file.
+* **L31 Source-reading drills.** For each earlier lab, trace one ioctl from `drm_ioctl()` to the driver callback in the source tree of the running 6.1.99-rk3588 kernel (to be located; the SDK's 5.10 tree at `ca43ccf` is a different kernel and only useful for a 5.10 → 6.1 comparison); write a one-page call-chain note. Self-check: draw it from memory.
+* **L32 BSP vs mainline diff study.** Compare the Rockchip BSP display driver and the mainline `rockchip_drm_vop2.c` for the same feature (e.g. plane `zpos`, AFBC, interrupt handling). Output: a table of differences with file/function references. BSP side: the running 6.1.99 tree. Mainline side: a checkout to be added outside the repo (RK3588 VOP2 data is upstream from v6.8, panthor from v6.10, per docs 12 and 18). Compare per feature, not per file. Optional third column: the SDK's 5.10.160 tree, to see how the BSP driver evolved.
 * **L33 Fix or extend a driver.** Pick a real defect or missing feature found during Phase 0–8 (e.g. a property the VOP2 driver does not expose), implement it in the board's tree, and verify with the earlier lab tools.
 * **L34 Upstream-style patch.** Prepare the L33 change as a mailing-list-quality patch (checkpatch, commit message, test evidence) against current mainline; submission itself is optional.
-* **L35 Hardware reference.** Read the RK3588 TRM sections for VOP2 / DSI and annotate register-level behaviour against traces from L14. **Blocked:** no TRM or datasheet was found on the host (inventory §8). Until one is obtained, the register source is the driver's own tables (`rockchip_vop2_reg.c`) and `Documentation/devicetree/bindings/display/rockchip/` in the SDK tree.
+* **L35 Hardware reference.** Read the RK3588 TRM sections for VOP2 / DSI and annotate register-level behaviour against traces from L14. **Blocked:** no TRM or datasheet was found on the host (inventory §8). Until one is obtained, the register source is the driver's own tables (`rockchip_vop2_reg.c`) and `Documentation/devicetree/bindings/display/rockchip/` in the kernel tree.
 
 ### Lab template (add to every lab)
 ```
@@ -150,7 +157,7 @@ Stretch goals · Results (measured, with kernel/tree stated) · References
 | 2 | `docs/textbook/` skeleton: chapter stubs + glossary; each links to existing experiment | none |
 | 3 | Retrofit labs 01–18 with *Pass criteria* and *Self-check questions* | Step 1 |
 | 4 | L19, L20 | Step 1 (Exp 18 results) |
-| 5 | L21–L23 (kernel side, VKMS first so it is board-optional) | none for L21; kernel tree for L22/L23 |
+| 5 | L21–L23 (kernel side, VKMS first so it is board-optional) | none for L21a; running kernel's source + config for L21b/L22/L23 |
 | 6 | Textbook chapters 1–11 written from existing docs | Step 2 |
 | 7 | Phases 7–8, chapters 12–17 | Steps 1, 4 |
 | 8 | Phase 9 expert track, interleaved with 4–7 (do L31 alongside each lab rather than at the end) | `LUBANCAT_DIR` |
@@ -168,9 +175,8 @@ Stretch goals · Results (measured, with kernel/tree stated) · References
 ---
 
 ## 8. Open questions
-1. Does the board run the SDK build (kernel `5.10.160-18` deb, Ubuntu 20.04.6 lite rootfs)? Compare `uname -a` / `/etc/os-release` on the board with the inventory.
-2. Which DSI overlay is loaded (DSI1/VP3 7" ebf410173 is the candidate from doc 03)?
-3. Is it acceptable to risk the display when loading test modules (L21b, L22)? `CONFIG_MODULES=y` in the SDK config, so it is technically possible.
-4. Is an HDMI monitor available (L16, multi-display labs)?
-5. Can a RK3588 TRM be obtained (L35)?
-6. Where should the mainline kernel checkout for L32 live (outside the repo, e.g. next to `LUBANCAT_DIR`)?
+1. **Reference display setup.** Reconnect the 1024x600 DSI panel (and which DSI port / `5io-dsi*` overlay), or move the experiments to HDMI/DP? Which monitors are available?
+2. **Running kernel source.** The 6.1.99-rk3588 kernel was built on `tom-B550M-AORUS-ELITE` on 2026-02-13. Where is that source tree, which branch/commit, and is its `.config` available (or read `/proc/config.gz` on the board)? This is needed for L0.4, L21b, L22, L23, L31, L32.
+3. Is it acceptable to risk the display when loading test modules (L21b, L22)?
+4. Can a RK3588 TRM be obtained (L35)?
+5. Where should the mainline kernel checkout for L32 live (outside the repo)?

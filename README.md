@@ -52,17 +52,19 @@ I have structured the bring-up process into progressive experiments:
 ### Test Environment
 Register addresses, IRQ numbers and object IDs quoted in the experiments depend on the exact kernel and board configuration. Record the versions used so that results can be reproduced:
 
-| Item | On the board | SDK build ([inventory](./docs/notes/lubancat-inventory.md); not yet confirmed to be what the board runs) | How to obtain on the board |
-| :--- | :--- | :--- | :--- |
-| Board | LubanCat 5 (RK3588) | `LubanCat_Linux_rk3588_SDK_20260421` | — |
-| OS image | `TODO` | Ubuntu 20.04.6 LTS lite rootfs | `cat /etc/os-release` |
-| Kernel version | `TODO` | 5.10.160 (`linux-image-5.10.160_5.10.160-18_arm64.deb`) | `uname -a` |
-| Kernel source (BSP tree / branch / commit) | `TODO` | `github.com/LubanCat/kernel` @ `ca43ccfcb96c` (detached HEAD), `lubancat_linux_rk3588_defconfig` | from the image vendor |
-| DRM driver | `TODO` | `rockchipdrm` with `CONFIG_ROCKCHIP_VOP2=y` | `cat /sys/kernel/debug/dri/0/name` |
-| libdrm | `TODO` | 2.4.107-8ubuntu1~20.04.2 | `pkg-config --modversion libdrm` |
-| modetest | `TODO` | unknown (not in the inventory) | `dpkg -l libdrm-tests` |
-| GPU stack | `TODO` | kbase (`CONFIG_MALI_BIFROST=y`, CSF) + libmali `valhall-g610-g13p0-x11-gbm` 1.9-1 | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
-| Display | 1024x600 MIPI-DSI panel on VP3 | candidate overlay `rk3588-lubancat-5-dsi1-vp3-1024x600-7inch-ebf410173` | [Experiment 03](./docs/03_DSI_Panel_Bringup.md) |
+| Item | On the board ([runtime capture](./docs/notes/board-runtime.md), 2026-10-10) | How to obtain on the board |
+| :--- | :--- | :--- |
+| Board | **LubanCat-5IO** (`embedfire,rk3588-lubancat-5io`) | `cat /proc/device-tree/model` |
+| OS image | Ubuntu 20.04.6 LTS (`BUILD_INFO` 2026-02-13) | `cat /etc/os-release` |
+| Kernel version | 6.1.99-rk3588 `#7`, built 2026-02-13, Arm gcc 10.3-2021.07 | `uname -a`, `cat /proc/version` |
+| Kernel source (BSP tree / branch / commit) | `TODO` (unknown; not the SDK's 5.10.160 tree) | from whoever built the kernel |
+| DRM driver | `rockchip` on `display-subsystem` (card0); card1 is `rknpu` | `cat /sys/kernel/debug/dri/0/name` |
+| libdrm | 2.4.107-8ubuntu1~20.04.2 (`libdrm-dev` installed) | `pkg-config --modversion libdrm` |
+| modetest | `/usr/bin/modetest` from package `rktoolkit` (version not recorded) | `dpkg -S $(which modetest)` |
+| GPU | `/dev/mali0` (kbase); userspace library `TODO` | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
+| Display | **No DSI connector at the captured boot.** Connectors: DP-1, HDMI-A-1, HDMI-A-2 (disconnected), Writeback-1. Experiments 01–17 were written for a 1024x600 DSI panel on VP3, see [Study Plan §1](./docs/STUDY_PLAN.md) | `ls /sys/class/drm` |
+
+The host SDK (`LubanCat_Linux_rk3588_SDK_20260421`, kernel 5.10.160) is described in [`docs/notes/lubancat-inventory.md`](./docs/notes/lubancat-inventory.md); the board does **not** run its kernel or image.
 
 > Kernel-side explanations in the docs cite upstream `torvalds/linux` source files and tags (mainly `v6.1` and `master`; RK3588 VOP2 support is upstream since `v6.8`). The Rockchip BSP kernel carries vendor patches, so behaviour may differ—each doc says where this matters.
 
