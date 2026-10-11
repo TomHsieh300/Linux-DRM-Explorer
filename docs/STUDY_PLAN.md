@@ -3,7 +3,8 @@
 Status: **design proposal**. Nothing below is implemented yet.
 
 > **Scope note.** This plan is based on the contents of this repository only (README, `docs/01`–`18`, `HARDWARE_VALIDATION.md`, `src/`, `tools/`, `Makefile`, CI, git history).
-> Four read-only surveys feed this plan:
+> Five read-only surveys feed this plan:
+> * [`notes/vm-share-docs.md`](./notes/vm-share-docs.md) — PDF documentation in the VMware shared folder (file names and `pdfinfo` only; contents not checked). See §7a.
 > * [`notes/board-kernel-source.md`](./notes/board-kernel-source.md) — source of the running kernel (2026-10-11). **The board was reflashed on 2026-10-11**; the kernel now running is build `#11` from `/home/tom/LubanCat-6.1/kernel-6.1` (confirmed by the `Linux version` banner and the `System.map` md5).
 > * [`notes/board-kernel-config.md`](./notes/board-kernel-config.md) — the running kernel's `/proc/config.gz` (8460 lines, md5 `931026800151912fc38c37fce658e5a9`, identical to `/boot/config-6.1.99-rk3588`). The full file is kept on the host only, at `/home/tom/LubanCat-board/config-6.1.99-rk3588`.
 > * [`notes/board-runtime.md`](./notes/board-runtime.md) — the board as captured on 2026-10-10, **before the reflash** (kernel `#7`). Per the author, after the reflash libdrm, libmali, `modetest`, the card0/card1 split, the dma-heaps and the connector list are unchanged; `uname`, build date and `BUILD_INFO` differ.
@@ -71,7 +72,7 @@ The only reader is the author, whose goal is to become a **domain expert in Linu
 1. **Validate before extending.** Phase 0 below is a hard gate for anything that depends on measured numbers.
 2. **Two artefacts, one source of truth.** The *textbook* explains concepts and cites kernel source; the *labs* are hands-on and link into the textbook. A concept is written once, in the textbook.
 3. **Every lab is checkable.** Each lab states observable pass criteria (a printed value, a file, a tracepoint) so the reader can tell whether it worked without a reference answer.
-4. **No fabricated results.** Keep the existing rule: unmeasured → `TODO(on-hardware)`; a claim about the kernel cites file and function, and says which tree/tag it was checked on.
+4. **No fabricated results.** Keep the existing rule: unmeasured → `TODO(on-hardware)`; a claim about the kernel cites file and function, and says which tree/tag it was checked on; a claim about the hardware cites the TRM/datasheet file name, version and page.
 5. **Board-optional where possible.** Where a concept does not need Rockchip hardware, provide a variant that runs on any Linux machine (VKMS, `drm_info`, tracepoints) so the course is usable without the board.
 
 ---
@@ -111,7 +112,7 @@ Numbering continues the existing sequence. Labs 19–20 are already promised by 
 ### Phase 0 — Validate what exists (gate)
 * **L0.1** Fill the README Test Environment table (done from `notes/board-runtime.md`, `board-kernel-config.md`, `board-kernel-source.md`). Still missing: loaded DTB, new `BUILD_INFO`. **Rule from now on:** every result recorded in a doc states the kernel build (`/proc/version` line) and the `System.map` md5, because the board can be reflashed between sessions, as happened on 2026-10-11.
 * **L0.2** Choose the reference display setup (open question 1), then run `tools/collect-results.sh` (+ `--active`) and the manual Part B list; fill all `TODO(on-hardware)` in docs 01–18 with results from **this** board.
-* **L0.3** Resolve the open questions in `HARDWARE_VALIDATION.md`: which DTB U-Boot loads (`/boot/rk-kernel.dtb` exists; extlinux uses `devicetreedir /`), why no DSI panel probed, source of the VP0 "8K" claim (the board's `uEnv` comment says 8K output occupies VP0+VP1 and needs the `hdmi-8k` overlay — a vendor comment, not a hardware reference).
+* **L0.3** Resolve the open questions in `HARDWARE_VALIDATION.md`: which DTB U-Boot loads (`/boot/rk-kernel.dtb` exists; extlinux uses `devicetreedir /`), why no DSI panel probed, source of the VP0 "8K" claim (the board's `uEnv` comment says 8K output occupies VP0+VP1 and needs the `hdmi-8k` overlay — a vendor comment, not a hardware reference). For the schematic question: only the **LubanCat5IOB** carrier schematic (`LubanCat5IOB_EBF410153V1R0_SCH_20240820.pdf`) and the **LubanCat5CB** core-board schematic exist; the board reports `LubanCat-5IO`. In the SDK 5.10 tree `rk3588-lubancat-5io.dts` includes `rk3588-lubancat-5iob.dts` (and its DTB reports `5IOB`); check the same relationship in the 6.1 tree at `cb5bebb5c445` before using the 5IOB schematic for this board (e.g. for the DSI connectors and the panel EEPROM at 0x51 on I²C 2/5).
 * **L0.4** Resolve every row of "Conflicts between the running board and the existing docs" (§1).
 * *Exit criterion:* no `TODO(on-hardware)` remaining in docs 01–18, or each remaining one has a stated reason.
 
@@ -142,7 +143,7 @@ Numbering continues the existing sequence. Labs 19–20 are already promised by 
 * **L32 BSP vs mainline diff study.** Compare the Rockchip BSP display driver and the mainline `rockchip_drm_vop2.c` for the same feature (e.g. plane `zpos`, AFBC, interrupt handling). Output: a table of differences with file/function references. BSP side: `/home/tom/LubanCat-6.1/kernel-6.1` @ `cb5bebb5c445`. Mainline side: a checkout to be added outside the repo (RK3588 VOP2 data is upstream from v6.8, panthor from v6.10, per docs 12 and 18). Compare per feature, not per file. Optional third column: the SDK's 5.10.160 tree, to see how the BSP driver evolved.
 * **L33 Fix or extend a driver.** Pick a real defect or missing feature found during Phase 0–8 (e.g. a property the VOP2 driver does not expose), implement it in the board's tree, and verify with the earlier lab tools.
 * **L34 Upstream-style patch.** Prepare the L33 change as a mailing-list-quality patch (checkpatch, commit message, test evidence) against current mainline; submission itself is optional.
-* **L35 Hardware reference.** Read the RK3588 TRM sections for VOP2 / DSI and annotate register-level behaviour against traces from L14. **Possibly unblocked:** no TRM was found in the SDK (inventory §8), but the VMware shared folder `/mnt/hgfs/vm_share/lubancat/` holds "LubanCat hardware files and Rockchip PDF documentation" (board-kernel-source §1); file names were not listed, so whether a TRM is among them is unknown. Until one is obtained, the register source is the driver's own tables (`rockchip_vop2_reg.c`) and `Documentation/devicetree/bindings/display/rockchip/` in the kernel tree.
+* **L35 Hardware reference.** Read the RK3588 TRM sections for VOP2, MIPI DSI-2, HDMI/DP and annotate register-level behaviour against traces from L14 and the driver's register tables. **Unblocked:** the RK3588 TRM **V1.0 (2022-03-09)** is on the host in two parts (Part 1: 2287 pages, Part 2: 3706 pages; paths in §7a). First step: list each part's chapters from its PDF outline/table of contents and record which part and page range holds VOP2, MIPI DSI-2, HDMI TX, DP, GPU and the relevant CRU/GRF sections — this is not known yet. The TRM is from 2022 and the driver from 2026, so where the two disagree, record both; the datasheet (V1.1 and V1.7 present) is the source for electrical limits such as maximum resolutions per VP (resolves the "VP0 supports 8K" question in L0.3).
 
 ### Lab template (add to every lab)
 ```
@@ -179,10 +180,31 @@ Stretch goals · Results (measured, with kernel/tree stated) · References
 
 ---
 
+## 7a. Reference library (on the host, never committed)
+
+Unless a row says otherwise, files are under `/mnt/hgfs/vm_share/lubancat/5-RockChip官方文档/` (VMware shared folder on `tom-VM`). PDFs stay there; docs cite them by file name, version and page. Only names and page counts were checked; **contents, and whether each guide matches the 6.1 BSP, are unverified**. Most guides exist only in Chinese (`_CN`); the textbook stays in English and quotes or paraphrases with a citation.
+
+| Material | File(s) | Use in |
+| :--- | :--- | :--- |
+| RK3588 TRM V1.0 | `RK3588/Rockchip RK3588 TRM V1.0-Part1-20220309.pdf`, `RK3588/Rockchip RK3588 TRM V1.0-Part2 20220309.pdf` | L35, L03 register checks, textbook Part IV |
+| RK3588 datasheet | `RK3588/Rockchip RK3588 Datasheet V1.1-20220124.pdf`, `RK3588/Rockchip_RK3588_Datasheet_V1.7-20231117.pdf` (embedded title says V1.5) | L0.3 (VP limits), L01 |
+| DRM driver guide | `Common/DISPLAY/DRM/Rockchip_Developer_Guide_DRM_Display_Driver_CN.pdf` (+ other copies/versions in `Common/DISPLAY/`) | L31, textbook ch. 2, 3, 11 |
+| VOP2 plane assignment | `Common/DISPLAY/Rockchip_VOP2_Plane_Assign.pdf` | L12, L16, L28 |
+| MIPI DSI-2 / panels | `Common/DISPLAY/MIPI/Rockchip_RK3588_Developer_Guide_MIPI_DSI2_CN.pdf`, `Common/DISPLAY/Rockchip_DRM_Panel_Porting_Guide_V1.6_20190228.pdf` | L03, L15, L24 |
+| HDMI / DP | `Common/DISPLAY/HDMI/Rockchip_Developer_Guide_HDMI_CN.pdf`, `…HDMI-PHY-PLL_Config_CN.pdf`, `…HDMI-CEC_CN.pdf`, `Common/DISPLAY/DP/Rockchip_RK3588_Developer_Guide_DisplayPort_CN.pdf` | L16, multi-display labs |
+| Vsync adjust | `Common/DISPLAY/Vsync/Rockchip_RK3588_Developer_Guide_Vsync_Adjust_CN.pdf` | L09, L17 |
+| DMA-BUF | `Common/MEMORY/Rockchip_Developer_Guide_Linux_DMABUF_CN.pdf` | L11, textbook ch. 4 |
+| Tracing | `Common/PERF/Rockchip_Quick_Start_Linux_Systrace_CN.pdf` | L14, L20 |
+| Graphics stack | `Linux/Graphics/Rockchip_Developer_Guide_Linux_Graphics_EN.pdf` (+ `_CN`) | L18, L19, L28 |
+| MPP | `Linux/Multimedia/Rockchip_Developer_Guide_MPP_EN.pdf` (+ `_CN`) | L26 |
+| RGA | `Linux/Multimedia/Rockchip_Developer_Guide_RGA_EN.pdf`, `…FAQ_RGA_EN.pdf` (+ `_CN`) | L27 |
+| HDMI RX | `Common/HDMI-IN/Rockchip_Developer_Guide_HDMI_RX_CN.pdf` | L27b |
+| Board schematics | `/mnt/hgfs/vm_share/lubancat/鲁班猫5-BTB/20240820_fix1/SCH/LubanCat5IOB_EBF410153V1R0_SCH_20240820.pdf` (carrier) and `…/SCH/LubanCat5CB_EBF410152V1R0_SCH_20240820.pdf` (core board) — different base directory from the rows above | L0.3, L24 — only after confirming 5IO ≙ 5IOB |
+
 ## 8. Open questions
 1. **Reference display setup.** Reconnect the 1024x600 DSI panel (and which DSI port / `5io-dsi*` overlay), or move the experiments to HDMI/DP? Which monitors are available?
 2. **Is the 2026-10-11 image the reference from now on?** If yes, all Phase 0 results are taken on build `#11` (`cb5bebb5c445`); any later reflash must be recorded the same way.
 3. Is it acceptable to risk the display when loading test modules (L21b, L22)? The running kernel allows it technically (`MODULES=y`, no signing).
 4. Should the kernel be rebuilt with `KPROBES=y` for the tracing labs (L14, L20), or should they stay within tracepoints and the function tracer? (A rebuild changes the reference build, see question 2.)
-5. Does `/mnt/hgfs/vm_share/lubancat/` contain the RK3588 TRM (L35)?
+5. Does the LubanCat5IOB schematic apply to the running LubanCat-5IO board (see L0.3)?
 6. Where should the mainline kernel checkout for L32 live (outside the repo)?
