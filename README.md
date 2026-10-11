@@ -58,6 +58,7 @@ Register addresses, IRQ numbers and object IDs quoted in the experiments depend 
 | OS image | Ubuntu 20.04.6 LTS (`BUILD_INFO` 2026-02-13) | `cat /etc/os-release` |
 | Kernel version | 6.1.99-rk3588 `#7`, built 2026-02-13, Arm gcc 10.3-2021.07 | `uname -a`, `cat /proc/version` |
 | Kernel source (BSP tree / branch / commit) | `TODO` (unknown; not the SDK's 5.10.160 tree) | from whoever built the kernel |
+| Kernel config | `/proc/config.gz`, 8460 lines, md5 `931026800151912fc38c37fce658e5a9` ([key options](./docs/notes/board-kernel-config.md)) | `zcat /proc/config.gz \| md5sum` |
 | DRM driver | `rockchip` on `display-subsystem` (card0); card1 is `rknpu` | `cat /sys/kernel/debug/dri/0/name` |
 | libdrm | 2.4.107-8ubuntu1~20.04.2 (`libdrm-dev` installed) | `pkg-config --modversion libdrm` |
 | modetest | `/usr/bin/modetest` from package `rktoolkit` (version not recorded) | `dpkg -S $(which modetest)` |
