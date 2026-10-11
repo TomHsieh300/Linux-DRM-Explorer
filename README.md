@@ -63,6 +63,7 @@ Register addresses, IRQ numbers and object IDs quoted in the experiments depend 
 | libdrm | 2.4.107-8ubuntu1~20.04.2 (`libdrm-dev` installed) | `pkg-config --modversion libdrm` |
 | modetest | `/usr/bin/modetest` from package `rktoolkit` (version not recorded) | `dpkg -S $(which modetest)` |
 | GPU | `/dev/mali0` (kbase, `MALI_BIFROST` + CSF); libmali g13p0 (package name not recorded) | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
+| Device tree | `/boot/rk-kernel.dtb` → `rk3588-lubancat-5io.dtb` (md5 `2a60a3440be1…`, same as the kernel tree's build) + `uEnv.txt` overlays ([details](./docs/notes/board-5io-dts.md)) | `cat /proc/device-tree/model`, `md5sum /boot/rk-kernel.dtb` |
 | Display | **No DSI connector at the captured boot.** Connectors: DP-1, HDMI-A-1, HDMI-A-2 (disconnected), Writeback-1. Experiments 01–17 were written for a 1024x600 DSI panel on VP3, see [Study Plan §1](./docs/STUDY_PLAN.md) | `ls /sys/class/drm` |
 
 The host SDK (`LubanCat_Linux_rk3588_SDK_20260421`, kernel 5.10.160) is described in [`docs/notes/lubancat-inventory.md`](./docs/notes/lubancat-inventory.md); the board does **not** run its kernel or image.
