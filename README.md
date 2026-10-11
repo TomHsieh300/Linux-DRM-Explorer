@@ -52,17 +52,17 @@ I have structured the bring-up process into progressive experiments:
 ### Test Environment
 Register addresses, IRQ numbers and object IDs quoted in the experiments depend on the exact kernel and board configuration. Record the versions used so that results can be reproduced:
 
-| Item | On the board ([runtime capture](./docs/notes/board-runtime.md), 2026-10-10) | How to obtain on the board |
+| Item | On the board ([runtime](./docs/notes/board-runtime.md) 2026-10-10, [kernel source](./docs/notes/board-kernel-source.md) after the 2026-10-11 reflash) | How to obtain on the board |
 | :--- | :--- | :--- |
 | Board | **LubanCat-5IO** (`embedfire,rk3588-lubancat-5io`) | `cat /proc/device-tree/model` |
-| OS image | Ubuntu 20.04.6 LTS (`BUILD_INFO` 2026-02-13) | `cat /etc/os-release` |
-| Kernel version | 6.1.99-rk3588 `#7`, built 2026-02-13, Arm gcc 10.3-2021.07 | `uname -a`, `cat /proc/version` |
-| Kernel source (BSP tree / branch / commit) | `TODO` (unknown; not the SDK's 5.10.160 tree) | from whoever built the kernel |
+| OS image | Ubuntu 20.04.6 LTS, reflashed 2026-10-11 (new `BUILD_INFO` not recorded) | `cat /etc/os-release` |
+| Kernel version | 6.1.99-rk3588 `#11`, built 2026-10-11 on `tom-VM`, Arm gcc 10.3-2021.07; `System.map` md5 `9294ce891a33b637101fbde16fe2e72d` | `uname -a`, `cat /proc/version` |
+| Kernel source (BSP tree / branch / commit) | `github.com/LubanCat/kernel` `lbc-develop-6.1` @ `cb5bebb5c445`, clean ([details](./docs/notes/board-kernel-source.md)) | match the `Linux version` banner and `System.map` md5 against the build tree |
 | Kernel config | `/proc/config.gz`, 8460 lines, md5 `931026800151912fc38c37fce658e5a9` ([key options](./docs/notes/board-kernel-config.md)) | `zcat /proc/config.gz \| md5sum` |
 | DRM driver | `rockchip` on `display-subsystem` (card0); card1 is `rknpu` | `cat /sys/kernel/debug/dri/0/name` |
 | libdrm | 2.4.107-8ubuntu1~20.04.2 (`libdrm-dev` installed) | `pkg-config --modversion libdrm` |
 | modetest | `/usr/bin/modetest` from package `rktoolkit` (version not recorded) | `dpkg -S $(which modetest)` |
-| GPU | `/dev/mali0` (kbase); userspace library `TODO` | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
+| GPU | `/dev/mali0` (kbase, `MALI_BIFROST` + CSF); libmali g13p0 (package name not recorded) | [Experiment 18](./docs/18_GPU_Stack_Discovery.md) |
 | Display | **No DSI connector at the captured boot.** Connectors: DP-1, HDMI-A-1, HDMI-A-2 (disconnected), Writeback-1. Experiments 01–17 were written for a 1024x600 DSI panel on VP3, see [Study Plan §1](./docs/STUDY_PLAN.md) | `ls /sys/class/drm` |
 
 The host SDK (`LubanCat_Linux_rk3588_SDK_20260421`, kernel 5.10.160) is described in [`docs/notes/lubancat-inventory.md`](./docs/notes/lubancat-inventory.md); the board does **not** run its kernel or image.
